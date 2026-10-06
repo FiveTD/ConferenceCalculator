@@ -1,8 +1,9 @@
 use super::{
     Record, TiebreakRule,
     record::group_ranked,
-    rule::RuleOutcome,
-    trace::{Ctx, Resolution, StepId},
+    resolution::Resolution,
+    rule::{RuleId, RuleOutcome},
+    trace::{Ctx, StepId},
 };
 use crate::{model::TeamId, repository::ConferenceState};
 
@@ -12,6 +13,16 @@ pub struct Procedure {
 }
 
 impl Procedure {
+    pub fn new(
+        two_team: Vec<Box<dyn TiebreakRule>>,
+        multi_team: Vec<Box<dyn TiebreakRule>>,
+    ) -> Self {
+        Self {
+            two_team,
+            multi_team,
+        }
+    }
+
     pub fn resolve(&self, state: &ConferenceState) -> Resolution {
         let standings: Vec<(TeamId, Record)> = state
             .teams
@@ -61,7 +72,13 @@ impl Procedure {
             }
         }
 
+        ctx.mark_unresolved(&tied);
         tied // no rule separated them; stays in input order
+    }
+
+    /// (two-team rules, multi-team rules), in priority order.
+    pub fn rule_ids(&self) -> (Vec<RuleId>, Vec<RuleId>) {
+        (ids(&self.two_team), ids(&self.multi_team))
     }
 }
 
@@ -71,4 +88,8 @@ fn is_partition(groups: &[Vec<TeamId>], tied: &[TeamId]) -> bool {
     flat.sort();
     expected.sort();
     groups.len() >= 2 && flat == expected
+}
+
+fn ids(rules: &[Box<dyn TiebreakRule>]) -> Vec<RuleId> {
+    rules.iter().map(|r| r.id()).collect()
 }

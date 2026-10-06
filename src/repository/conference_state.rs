@@ -23,6 +23,7 @@ pub enum ConferenceStateError {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ConferenceState {
     pub conference: Conference,
+    pub season: u16,
     pub teams: BTreeMap<TeamId, Team>,
     pub games: Vec<Game>,
 }
@@ -31,11 +32,11 @@ impl ConferenceState {
     pub async fn from_cfbd(
         client: &CfbdClient,
         conference: Conference,
-        year: u16,
+        season: u16,
     ) -> Result<Self, ConferenceStateError> {
         let name = conference.cfbd_name();
         let (cfbd_teams, cfbd_games) =
-            tokio::try_join!(client.get_teams(name), client.get_games(year, name))?;
+            tokio::try_join!(client.get_teams(name), client.get_games(season, name))?;
 
         let mut teams: BTreeMap<TeamId, Team> = cfbd_teams
             .into_iter()
@@ -56,6 +57,7 @@ impl ConferenceState {
 
         Ok(Self {
             conference,
+            season,
             teams,
             games,
         })

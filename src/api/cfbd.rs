@@ -117,11 +117,15 @@ impl CfbdClient {
             .await
     }
 
-    pub async fn get_games(&self, year: u16, conference: &str) -> Result<Vec<CfbdGame>, CfbdError> {
+    pub async fn get_games(
+        &self,
+        season: u16,
+        conference: &str,
+    ) -> Result<Vec<CfbdGame>, CfbdError> {
         self.get_json(
             "games",
             &[
-                ("year", year.to_string()),
+                ("year", season.to_string()),
                 ("conference", conference.to_string()),
                 ("seasonType", "regular".to_string()),
             ],

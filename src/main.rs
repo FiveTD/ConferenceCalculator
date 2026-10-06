@@ -11,20 +11,20 @@ use crate::model::*;
 use crate::repository::{ConferenceState, ConferenceStateError};
 use crate::tiebreak::{rules::*, *};
 
-const CONFERENCE: Conference = Conference::BigTwelve;
-const YEAR: u16 = 2025;
+const CONFERENCE: Conference = Conference::BigTen;
+const SEASON: u16 = 2025;
 
 fn load_from_file() -> Result<ConferenceState, ConferenceStateError> {
-    let file_path = format!("{}-{}.json", CONFERENCE.cfbd_name(), YEAR);
+    let file_path = format!("{}-{}.json", CONFERENCE.cfbd_name(), SEASON);
     ConferenceState::from_file(Path::new(&file_path))
 }
 
 async fn load_from_cfbd() -> Result<ConferenceState, Box<dyn std::error::Error>> {
     let cfbd_key = std::env::var("CFBD_KEY")?;
     let cfbd_client = CfbdClient::new(cfbd_key)?;
-    let state = ConferenceState::from_cfbd(&cfbd_client, CONFERENCE, YEAR).await?;
+    let state = ConferenceState::from_cfbd(&cfbd_client, CONFERENCE, SEASON).await?;
 
-    let file_path = format!("{}-{}.json", CONFERENCE.cfbd_name(), YEAR);
+    let file_path = format!("{}-{}.json", CONFERENCE.cfbd_name(), SEASON);
     state.to_file(Path::new(&file_path))?;
     Ok(state)
 }

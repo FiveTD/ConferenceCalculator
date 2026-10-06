@@ -116,7 +116,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "conference-championship-sim"
+name = "conference-calculator"
 version = "0.1.0"
 dependencies = [
  "dotenvy",

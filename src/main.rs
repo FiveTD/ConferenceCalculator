@@ -10,7 +10,7 @@ use crate::model::*;
 use crate::repository::{ConferenceState, ConferenceStateError};
 use crate::tiebreak::{rules::*, *};
 
-const CONFERENCE: Conference = Conference::BigTen;
+const CONFERENCE: Conference = Conference::BigTwelve;
 
 impl ConferenceState {
     fn print_games(&self) {
@@ -58,8 +58,8 @@ async fn load_from_cfbd() -> Result<ConferenceState, Box<dyn std::error::Error>>
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenvy::dotenv()?;
 
-    // let state = load_from_file()?;
-    let state = load_from_cfbd().await?;
+    let state = load_from_file()?;
+    // let state = load_from_cfbd().await?;
     state.print_games();
 
     let procedure = Procedure {

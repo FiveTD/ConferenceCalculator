@@ -55,6 +55,11 @@ impl ConferenceState {
         self.results_where(team, |_| true).0
     }
 
+    /// Total wins, including non-conference.
+    pub fn total_wins(&self, team: TeamId) -> u8 {
+        self.conference_record(team).wins + u8::from(self.teams[&team].non_conference_wins)
+    }
+
     /// Record in games against `opponents`.
     pub fn results_against(&self, team: TeamId, opponents: &[TeamId]) -> (Record, Vec<GameId>) {
         self.results_where(team, |opp| opponents.contains(&opp))

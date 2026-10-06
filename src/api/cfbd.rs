@@ -37,6 +37,7 @@ pub struct CfbdGame {
     pub away_points: Option<u16>,
     pub completed: bool,
     pub conference_game: bool,
+    pub week: u32,
 }
 
 impl CfbdGame {

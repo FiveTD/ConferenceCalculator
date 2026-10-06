@@ -47,8 +47,12 @@ impl ConferenceState {
             .collect();
 
         let mut games = Vec::new();
-        for g in cfbd_games {
+        for (i, &g) in cfbd_games.iter().enumerate() {
             if g.conference_game {
+                if i == cfbd_games.len() - 1 && g.week > cfbd_games[i - 1].week {
+                    // Conference championship game, filter out (for now)
+                    continue;
+                }
                 games.push(Game::from(g));
             } else if let Some(team) = g.winner_id().and_then(|w| teams.get_mut(&w)) {
                 team.non_conference_wins += 1

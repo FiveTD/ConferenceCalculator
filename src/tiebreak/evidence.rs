@@ -13,6 +13,7 @@ pub struct GameId(pub usize);
 #[derive(Debug, Clone, Serialize)]
 pub enum MetricValue {
     Record(Record),
+    Count(u8),
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -21,4 +22,6 @@ pub struct Evidence {
     pub value: MetricValue,
     /// The games that produced `value`
     pub games: Vec<GameId>,
+    /// The opponents this value was measured against (used for seeded leader)
+    pub against: Vec<TeamId>,
 }

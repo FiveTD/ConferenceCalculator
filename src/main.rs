@@ -11,7 +11,7 @@ use crate::model::*;
 use crate::repository::{ConferenceState, ConferenceStateError};
 use crate::tiebreak::{rules::*, *};
 
-const CONFERENCE: Conference = Conference::BigTen;
+const CONFERENCE: Conference = Conference::BigTwelve;
 const SEASON: u16 = 2025;
 
 fn load_from_file() -> Result<ConferenceState, ConferenceStateError> {
@@ -37,20 +37,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // let state = load_from_cfbd().await?;
     // state.print_games();
 
-    let procedure = Procedure {
-        two_team: vec![
-            Box::new(HeadToHead {
-                require_round_robin: true,
-            }),
-            Box::new(CommonOpponents { min_common: 1 }),
-        ],
-        multi_team: vec![
-            Box::new(HeadToHead {
-                require_round_robin: true,
-            }),
-            Box::new(CommonOpponents { min_common: 1 }),
-        ],
-    };
+    let procedure = procedures::procedure_for(CONFERENCE, SEASON)?;
     let resolution = procedure.resolve(&state);
     render::print_resolution(&state, &resolution);
 

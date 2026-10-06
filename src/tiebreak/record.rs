@@ -48,6 +48,21 @@ impl Record {
     }
 }
 
+impl std::ops::Add for Record {
+    type Output = Self;
+    fn add(self, rhs: Self) -> Self::Output {
+        Self {
+            wins: self.wins + rhs.wins,
+            losses: self.losses + rhs.losses,
+        }
+    }
+}
+impl std::iter::Sum for Record {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        iter.fold(Record::default(), |a, b| a + b)
+    }
+}
+
 /// Stably sort teams best-first by `key`, then group adjacent equal teams.
 pub fn group_ranked<K: Copy>(
     mut items: Vec<(TeamId, K)>,

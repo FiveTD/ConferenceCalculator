@@ -8,6 +8,17 @@ use super::{
 };
 use crate::model::TeamId;
 
+/// Describes how a step affected the procedure.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+pub enum StepEffect {
+    /// The group was divided into ordered subgroups, each resolved further.
+    Split,
+    /// One team was placed ahead of the rest, restarting the procedure.
+    Seeded(TeamId),
+    /// Nothing was settled; the group moved to the next rule.
+    Passed,
+}
+
 /// Position in `Resolution::trace`. Steps are only ever appended,
 /// so `trace[id.0]` is always the step with that id.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -22,12 +33,13 @@ pub struct TraceStep {
     pub tied: Vec<TeamId>,
     pub rule: RuleId,
     pub outcome: RuleOutcome,
+    pub effect: StepEffect,
 }
 
 impl TraceStep {
     /// Did this step actually separate the group?
     pub fn is_decisive(&self) -> bool {
-        matches!(self.outcome, RuleOutcome::Separated { .. })
+        self.effect != StepEffect::Passed
     }
 }
 
@@ -47,6 +59,7 @@ impl Ctx {
         tied: &[TeamId],
         rule: RuleId,
         outcome: &RuleOutcome,
+        effect: &StepEffect,
     ) -> StepId {
         let id = StepId(self.trace.len());
         for &team in tied {
@@ -58,6 +71,7 @@ impl Ctx {
             tied: tied.to_vec(),
             rule,
             outcome: outcome.clone(),
+            effect: effect.clone(),
         });
         id
     }

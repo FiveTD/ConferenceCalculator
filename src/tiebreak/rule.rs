@@ -8,6 +8,11 @@ use crate::{model::TeamId, repository::ConferenceState};
 pub enum RuleId {
     HeadToHead,
     CommonOpponents,
+    StandingsWalk,
+    OpponentsConferenceRecord,
+    TotalWins,
+    SportSourceRating,
+    CoinToss,
     // TODO
 }
 
@@ -16,6 +21,8 @@ pub enum NotApplicableReason {
     IncompleteRoundRobin,
     NoGamesAmongTied,
     TooFewCommonOpponents,
+    ExternalData, // i.e. SportSource rating
+    RandomDraw,
     // TODO ?
 }
 

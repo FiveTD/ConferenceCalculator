@@ -3,13 +3,24 @@ use super::{
     record::group_ranked,
     resolution::Resolution,
     rule::{RuleId, RuleOutcome},
-    trace::{Ctx, StepId},
+    trace::{Ctx, StepEffect, StepId},
 };
 use crate::{model::TeamId, repository::ConferenceState};
+
+/// Specifies how tiebreakers break up tied groups.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Reduction {
+    /// A separating rule splits the group, and each subgroup is resolved independently.
+    SplitAll,
+    /// A rule counts only if it produces a single leader.
+    /// The leader is seeded, and remaining teams restart the procedure.
+    SeedLeader,
+}
 
 pub struct Procedure {
     pub two_team: Vec<Box<dyn TiebreakRule>>,
     pub multi_team: Vec<Box<dyn TiebreakRule>>,
+    pub reduction: Reduction,
 }
 
 impl Procedure {
@@ -20,6 +31,25 @@ impl Procedure {
         Self {
             two_team,
             multi_team,
+            reduction: Reduction::SplitAll,
+        }
+    }
+
+    pub fn with_reduction(mut self, reduction: Reduction) -> Self {
+        self.reduction = reduction;
+        self
+    }
+
+    fn effect_of(&self, outcome: &RuleOutcome) -> StepEffect {
+        let RuleOutcome::Separated { groups, .. } = outcome else {
+            return StepEffect::Passed;
+        };
+        match self.reduction {
+            Reduction::SplitAll => StepEffect::Split,
+            Reduction::SeedLeader => match groups[0].as_slice() {
+                [leader] => StepEffect::Seeded(*leader),
+                _ => StepEffect::Passed, // no single leader: whole group continues
+            },
         }
     }
 
@@ -58,17 +88,31 @@ impl Procedure {
 
         for rule in rules {
             let outcome = rule.apply(&tied, state);
-            let step = ctx.record(parent, &tied, rule.id(), &outcome);
+            let effect = self.effect_of(&outcome);
+            let step = ctx.record(parent, &tied, rule.id(), &outcome, &effect);
 
-            if let RuleOutcome::Separated { groups, .. } = outcome {
-                debug_assert!(
-                    is_partition(&groups, &tied),
-                    "rule broke the split contract"
-                );
-                return groups
-                    .into_iter()
-                    .flat_map(|g| self.resolve_group(g, Some(step), state, ctx))
-                    .collect();
+            match (effect, outcome) {
+                (StepEffect::Split, RuleOutcome::Separated { groups, .. }) => {
+                    debug_assert!(
+                        is_partition(&groups, &tied),
+                        "rule broke the split contract"
+                    );
+                    return groups
+                        .into_iter()
+                        .flat_map(|g| self.resolve_group(g, Some(step), state, ctx))
+                        .collect();
+                }
+                (StepEffect::Seeded(leader), RuleOutcome::Separated { groups, .. }) => {
+                    let rest: Vec<TeamId> = groups
+                        .into_iter()
+                        .flatten()
+                        .filter(|&t| t != leader)
+                        .collect();
+                    let mut order = vec![leader];
+                    order.extend(self.resolve_group(rest, Some(step), state, ctx));
+                    return order;
+                }
+                _ => {} // Passed: try the next rule
             }
         }
 

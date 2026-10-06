@@ -74,10 +74,16 @@ fn print_step_evidence(state: &ConferenceState, indent: &str, step: &TraceStep) 
 fn print_evidence(state: &ConferenceState, indent: &str, evidence: &[Evidence]) {
     for e in evidence {
         let games: Vec<String> = e.games.iter().map(|&g| describe_game(state, g)).collect();
+        let versus = if !e.against.is_empty() {
+            format!(" vs {}", names(state, e.against.as_slice()))
+        } else {
+            "".into()
+        };
         println!(
-            "{indent}    {} {}: {}",
+            "{indent}    {} {}{}: {}",
             abbr(state, &e.team),
             format_metric(&e.value),
+            versus,
             games.join(", "),
         );
     }
@@ -87,6 +93,7 @@ fn print_evidence(state: &ConferenceState, indent: &str, evidence: &[Evidence]) 
 fn format_metric(value: &MetricValue) -> String {
     match value {
         MetricValue::Record(r) => format_record(r),
+        MetricValue::Count(n) => format!("{n} wins"),
     }
 }
 

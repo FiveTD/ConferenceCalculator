@@ -1,5 +1,6 @@
 mod evidence;
 mod procedure;
+pub mod procedures;
 mod queries;
 mod record;
 mod resolution;
@@ -8,8 +9,9 @@ pub mod rules;
 mod trace;
 
 pub use evidence::{Evidence, GameId, MetricValue};
-pub use procedure::Procedure;
+pub use procedure::{Procedure, Reduction};
 pub use record::Record;
 pub use resolution::{Placement, Resolution, TieStatus};
 pub use rule::{NotApplicableReason, RuleId, RuleOutcome, TiebreakRule};
-pub use trace::{StepId, TraceStep};
+pub use rules::IncompleteGroup;
+pub use trace::{StepEffect, StepId, TraceStep};

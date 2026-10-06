@@ -1,8 +1,10 @@
 use std::cmp::Ordering;
 
+use serde::Serialize;
+
 use crate::model::TeamId;
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize)]
 pub struct Record {
     pub wins: u8,
     pub losses: u8,

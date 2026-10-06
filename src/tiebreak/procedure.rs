@@ -49,7 +49,7 @@ impl Procedure {
             let outcome = rule.apply(&tied, state);
             let step = ctx.record(parent, &tied, rule.id(), &outcome);
 
-            if let RuleOutcome::Separated { groups } = outcome {
+            if let RuleOutcome::Separated { groups, .. } = outcome {
                 debug_assert!(
                     is_partition(&groups, &tied),
                     "rule broke the split contract"

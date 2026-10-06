@@ -1,6 +1,6 @@
+use super::support::{outcome_by_record, results_against};
 use crate::tiebreak::{
-    Record, TiebreakRule,
-    record::group_ranked,
+    TiebreakRule,
     rule::{NotApplicableReason, RuleId, RuleOutcome},
 };
 use crate::{model::TeamId, repository::ConferenceState};
@@ -21,18 +21,15 @@ impl TiebreakRule for HeadToHead {
             };
         }
 
-        let records: Vec<(TeamId, Record)> = tied
-            .iter()
-            .map(|&t| (t, state.record_against(t, tied)))
-            .collect();
+        let results = results_against(tied, tied, state);
 
         // A team that played nobody else has nothing to compare
-        if records.iter().any(|(_, r)| r.games() == 0) {
+        if results.iter().any(|r| r.record.games() == 0) {
             return RuleOutcome::NotApplicable {
                 reason: NotApplicableReason::NoGamesAmongTied,
             };
         }
 
-        RuleOutcome::from_groups(group_ranked(records, Record::cmp_pct))
+        outcome_by_record(results)
     }
 }

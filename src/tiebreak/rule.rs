@@ -1,5 +1,6 @@
 use serde::Serialize;
 
+use super::evidence::Evidence;
 use crate::{model::TeamId, repository::ConferenceState};
 
 /// Every tiebreaker rule gets a named ID to help with tracing.
@@ -21,20 +22,23 @@ pub enum NotApplicableReason {
 #[derive(Debug, Clone, Serialize)]
 pub enum RuleOutcome {
     /// Ordered subgroups, best first, always 2+
-    Separated { groups: Vec<Vec<TeamId>> },
+    Separated {
+        groups: Vec<Vec<TeamId>>,
+        evidence: Vec<Evidence>,
+    },
     /// Rule applied, no separation
-    NoSeparation,
+    NoSeparation { evidence: Vec<Evidence> },
     /// Rule did not apply
     NotApplicable { reason: NotApplicableReason },
 }
 
 impl RuleOutcome {
     /// Validator to ensure 2+ groups during separation.
-    pub fn from_groups(groups: Vec<Vec<TeamId>>) -> Self {
+    pub fn from_groups(groups: Vec<Vec<TeamId>>, evidence: Vec<Evidence>) -> Self {
         if groups.len() < 2 {
-            RuleOutcome::NoSeparation
+            RuleOutcome::NoSeparation { evidence }
         } else {
-            RuleOutcome::Separated { groups }
+            RuleOutcome::Separated { groups, evidence }
         }
     }
 }

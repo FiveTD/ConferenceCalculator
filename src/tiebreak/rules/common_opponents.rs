@@ -1,6 +1,5 @@
-use crate::tiebreak::{
-    NotApplicableReason, Record, RuleId, RuleOutcome, TiebreakRule, record::group_ranked,
-};
+use super::support::{outcome_by_record, results_against};
+use crate::tiebreak::{NotApplicableReason, RuleId, RuleOutcome, TiebreakRule};
 use crate::{model::TeamId, repository::ConferenceState};
 
 pub struct CommonOpponents {
@@ -20,11 +19,6 @@ impl TiebreakRule for CommonOpponents {
             };
         }
 
-        let records: Vec<(TeamId, Record)> = tied
-            .iter()
-            .map(|&t| (t, state.record_against(t, &common)))
-            .collect();
-
-        RuleOutcome::from_groups(group_ranked(records, Record::cmp_pct))
+        outcome_by_record(results_against(tied, &common, state))
     }
 }

@@ -1,5 +1,6 @@
 pub mod api;
 pub mod model;
+mod render;
 pub mod repository;
 pub mod tiebreak;
 
@@ -12,33 +13,6 @@ use crate::tiebreak::{rules::*, *};
 
 const CONFERENCE: Conference = Conference::BigTwelve;
 const YEAR: u16 = 2025;
-
-impl ConferenceState {
-    fn print_games(&self) {
-        for game in &self.games {
-            let home = &self.teams[&game.home];
-            let away = &self.teams[&game.away];
-
-            match game.result {
-                GameResult::Final {
-                    winner,
-                    home_points,
-                    away_points,
-                } => {
-                    let (w, w_pts, l, l_pts) = if winner == home.id {
-                        (home, home_points, away, away_points)
-                    } else {
-                        (away, away_points, home, home_points)
-                    };
-                    println!("{} {}-{} {}", w.abbreviation, w_pts, l_pts, l.abbreviation);
-                }
-                GameResult::Scheduled => {
-                    println!("{} @ {}", away.abbreviation, home.abbreviation);
-                }
-            }
-        }
-    }
-}
 
 fn load_from_file() -> Result<ConferenceState, ConferenceStateError> {
     let file_path = format!("{}-{}.json", CONFERENCE.cfbd_name(), YEAR);
@@ -78,40 +52,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         ],
     };
     let resolution = procedure.resolve(&state);
-
-    for (idx, team) in resolution.order.iter().enumerate() {
-        println!("{}. {}", idx + 1, state.teams[team].name);
-    }
-
-    let names = |ts: &[TeamId]| {
-        ts.iter()
-            .map(|t| state.teams[t].abbreviation.as_str())
-            .collect::<Vec<_>>()
-            .join(", ")
-    };
-
-    for step in &resolution.trace {
-        let verdict = match &step.outcome {
-            RuleOutcome::Separated { groups } => format!(
-                "split {}",
-                groups
-                    .iter()
-                    .map(|g| format!("[{}]", names(g)))
-                    .collect::<Vec<_>>()
-                    .join(" > ")
-            ),
-            RuleOutcome::NoSeparation => "all equal".to_string(),
-            RuleOutcome::NotApplicable { reason } => format!("n/a ({reason:?})"),
-        };
-        println!(
-            "{}[{}] {:?} on ({}): {}",
-            "  ".repeat(resolution.depth(step)),
-            step.id.0,
-            step.rule,
-            names(&step.tied),
-            verdict
-        )
-    }
+    render::print_resolution(&state, &resolution);
 
     Ok(())
 }

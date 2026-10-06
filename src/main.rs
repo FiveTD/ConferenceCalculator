@@ -7,18 +7,20 @@ pub mod tiebreak;
 use std::path::Path;
 
 use crate::api::CfbdClient;
-use crate::model::*;
+use crate::model::Conference;
 use crate::repository::{ConferenceState, ConferenceStateError};
-use crate::tiebreak::{rules::*, *};
+use crate::tiebreak::procedures;
 
 const CONFERENCE: Conference = Conference::BigTwelve;
 const SEASON: u16 = 2025;
 
+#[allow(dead_code)]
 fn load_from_file() -> Result<ConferenceState, ConferenceStateError> {
     let file_path = format!("{}-{}.json", CONFERENCE.cfbd_name(), SEASON);
     ConferenceState::from_file(Path::new(&file_path))
 }
 
+#[allow(dead_code)]
 async fn load_from_cfbd() -> Result<ConferenceState, Box<dyn std::error::Error>> {
     let cfbd_key = std::env::var("CFBD_KEY")?;
     let cfbd_client = CfbdClient::new(cfbd_key)?;

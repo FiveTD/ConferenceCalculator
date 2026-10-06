@@ -89,7 +89,7 @@ impl Procedure {
         for rule in rules {
             let outcome = rule.apply(&tied, state);
             let effect = self.effect_of(&outcome);
-            let step = ctx.record(parent, &tied, rule.id(), &outcome, &effect);
+            let step = ctx.record(parent, &tied, rule.id(), &outcome, effect);
 
             match (effect, outcome) {
                 (StepEffect::Split, RuleOutcome::Separated { groups, .. }) => {

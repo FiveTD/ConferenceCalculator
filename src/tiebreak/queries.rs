@@ -57,7 +57,7 @@ impl ConferenceState {
 
     /// Total wins, including non-conference.
     pub fn total_wins(&self, team: TeamId) -> u8 {
-        self.conference_record(team).wins + u8::from(self.teams[&team].non_conference_wins)
+        self.conference_record(team).wins + self.teams[&team].non_conference_wins
     }
 
     /// Record in games against `opponents`.

@@ -59,7 +59,7 @@ impl Ctx {
         tied: &[TeamId],
         rule: RuleId,
         outcome: &RuleOutcome,
-        effect: &StepEffect,
+        effect: StepEffect,
     ) -> StepId {
         let id = StepId(self.trace.len());
         for &team in tied {
@@ -71,7 +71,7 @@ impl Ctx {
             tied: tied.to_vec(),
             rule,
             outcome: outcome.clone(),
-            effect: effect.clone(),
+            effect,
         });
         id
     }

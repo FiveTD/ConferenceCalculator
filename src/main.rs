@@ -59,22 +59,28 @@ async fn load_from_cfbd() -> Result<ConferenceState, Box<dyn std::error::Error>>
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenvy::dotenv()?;
 
-    // let state = load_from_file()?;
-    let state = load_from_cfbd().await?;
-    state.print_games();
+    let state = load_from_file()?;
+    // let state = load_from_cfbd().await?;
+    // state.print_games();
 
     let procedure = Procedure {
-        two_team: vec![Box::new(HeadToHead {
-            require_round_robin: true,
-        })],
-        multi_team: vec![Box::new(HeadToHead {
-            require_round_robin: true,
-        })],
+        two_team: vec![
+            Box::new(HeadToHead {
+                require_round_robin: true,
+            }),
+            Box::new(CommonOpponents { min_common: 1 }),
+        ],
+        multi_team: vec![
+            Box::new(HeadToHead {
+                require_round_robin: true,
+            }),
+            Box::new(CommonOpponents { min_common: 1 }),
+        ],
     };
     let resolution = procedure.resolve(&state);
 
     for (idx, team) in resolution.order.iter().enumerate() {
-        println!("{}. {}", idx + 1, state.teams[team].abbreviation);
+        println!("{}. {}", idx + 1, state.teams[team].name);
     }
 
     let names = |ts: &[TeamId]| {
@@ -83,14 +89,27 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .collect::<Vec<_>>()
             .join(", ")
     };
+
     for step in &resolution.trace {
+        let verdict = match &step.outcome {
+            RuleOutcome::Separated { groups } => format!(
+                "split {}",
+                groups
+                    .iter()
+                    .map(|g| format!("[{}]", names(g)))
+                    .collect::<Vec<_>>()
+                    .join(" > ")
+            ),
+            RuleOutcome::NoSeparation => "all equal".to_string(),
+            RuleOutcome::NotApplicable { reason } => format!("n/a ({reason:?})"),
+        };
         println!(
             "{}[{}] {:?} on ({}): {}",
             "  ".repeat(resolution.depth(step)),
             step.id.0,
             step.rule,
             names(&step.tied),
-            if step.separated { "split" } else { "no split" }
+            verdict
         )
     }
 

@@ -1,6 +1,7 @@
 use super::{
     Record, TiebreakRule,
     record::group_ranked,
+    rule::RuleOutcome,
     trace::{Ctx, Resolution, StepId},
 };
 use crate::{model::TeamId, repository::ConferenceState};
@@ -45,10 +46,10 @@ impl Procedure {
         };
 
         for rule in rules {
-            let split = rule.split(&tied, state);
-            let step = ctx.record(parent, &tied, rule.id(), split.is_some());
+            let outcome = rule.apply(&tied, state);
+            let step = ctx.record(parent, &tied, rule.id(), &outcome);
 
-            if let Some(groups) = split {
+            if let RuleOutcome::Separated { groups } = outcome {
                 debug_assert!(
                     is_partition(&groups, &tied),
                     "rule broke the split contract"

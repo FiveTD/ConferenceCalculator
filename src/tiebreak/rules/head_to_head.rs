@@ -1,4 +1,8 @@
-use crate::tiebreak::{Record, TiebreakRule, record::group_ranked, rule::RuleId};
+use crate::tiebreak::{
+    Record, TiebreakRule,
+    record::group_ranked,
+    rule::{NotApplicableReason, RuleId, RuleOutcome},
+};
 use crate::{model::TeamId, repository::ConferenceState};
 
 pub struct HeadToHead {
@@ -10,9 +14,11 @@ impl TiebreakRule for HeadToHead {
         RuleId::HeadToHead
     }
 
-    fn split(&self, tied: &[TeamId], state: &ConferenceState) -> Option<Vec<Vec<TeamId>>> {
+    fn apply(&self, tied: &[TeamId], state: &ConferenceState) -> RuleOutcome {
         if self.require_round_robin && !state.have_all_played(tied) {
-            return None;
+            return RuleOutcome::NotApplicable {
+                reason: NotApplicableReason::IncompleteRoundRobin,
+            };
         }
 
         let records: Vec<(TeamId, Record)> = tied
@@ -22,10 +28,11 @@ impl TiebreakRule for HeadToHead {
 
         // A team that played nobody else has nothing to compare
         if records.iter().any(|(_, r)| r.games() == 0) {
-            return None;
+            return RuleOutcome::NotApplicable {
+                reason: NotApplicableReason::NoGamesAmongTied,
+            };
         }
 
-        let groups = group_ranked(records, Record::cmp_pct);
-        (groups.len() > 1).then_some(groups)
+        RuleOutcome::from_groups(group_ranked(records, Record::cmp_pct))
     }
 }

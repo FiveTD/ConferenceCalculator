@@ -6,7 +6,37 @@ use crate::{model::TeamId, repository::ConferenceState};
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 pub enum RuleId {
     HeadToHead,
+    CommonOpponents,
     // TODO
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+pub enum NotApplicableReason {
+    IncompleteRoundRobin,
+    NoGamesAmongTied,
+    TooFewCommonOpponents,
+    // TODO ?
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub enum RuleOutcome {
+    /// Ordered subgroups, best first, always 2+
+    Separated { groups: Vec<Vec<TeamId>> },
+    /// Rule applied, no separation
+    NoSeparation,
+    /// Rule did not apply
+    NotApplicable { reason: NotApplicableReason },
+}
+
+impl RuleOutcome {
+    /// Validator to ensure 2+ groups during separation.
+    pub fn from_groups(groups: Vec<Vec<TeamId>>) -> Self {
+        if groups.len() < 2 {
+            RuleOutcome::NoSeparation
+        } else {
+            RuleOutcome::Separated { groups }
+        }
+    }
 }
 
 pub trait TiebreakRule {
@@ -17,5 +47,5 @@ pub trait TiebreakRule {
     /// Return `None` if the rule can't separate them (doesn't apply, or all are equal).
     /// When `Some`, there must be at least two groups, and together they must contain
     /// exactly the teams in `tied`.
-    fn split(&self, tied: &[TeamId], state: &ConferenceState) -> Option<Vec<Vec<TeamId>>>;
+    fn apply(&self, tied: &[TeamId], state: &ConferenceState) -> RuleOutcome;
 }

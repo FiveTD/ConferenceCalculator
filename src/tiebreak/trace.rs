@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-use super::rule::RuleId;
+use super::rule::{RuleId, RuleOutcome};
 use crate::model::TeamId;
 
 /// Position in `Resolution::trace`. Steps are only ever appended,
@@ -16,7 +16,7 @@ pub struct TraceStep {
     pub parent: Option<StepId>,
     pub tied: Vec<TeamId>,
     pub rule: RuleId,
-    pub separated: bool,
+    pub outcome: RuleOutcome,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -50,7 +50,7 @@ impl Ctx {
         parent: Option<StepId>,
         tied: &[TeamId],
         rule: RuleId,
-        separated: bool,
+        outcome: &RuleOutcome,
     ) -> StepId {
         let id = StepId(self.trace.len());
         self.trace.push(TraceStep {
@@ -58,7 +58,7 @@ impl Ctx {
             parent,
             tied: tied.to_vec(),
             rule,
-            separated,
+            outcome: outcome.clone(),
         });
         id
     }

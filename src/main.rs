@@ -11,6 +11,7 @@ use crate::repository::{ConferenceState, ConferenceStateError};
 use crate::tiebreak::{rules::*, *};
 
 const CONFERENCE: Conference = Conference::BigTwelve;
+const YEAR: u16 = 2025;
 
 impl ConferenceState {
     fn print_games(&self) {
@@ -40,16 +41,16 @@ impl ConferenceState {
 }
 
 fn load_from_file() -> Result<ConferenceState, ConferenceStateError> {
-    let file_path = format!("{}.json", CONFERENCE.cfbd_name());
+    let file_path = format!("{}-{}.json", CONFERENCE.cfbd_name(), YEAR);
     ConferenceState::from_file(Path::new(&file_path))
 }
 
 async fn load_from_cfbd() -> Result<ConferenceState, Box<dyn std::error::Error>> {
     let cfbd_key = std::env::var("CFBD_KEY")?;
     let cfbd_client = CfbdClient::new(cfbd_key)?;
-    let state = ConferenceState::from_cfbd(&cfbd_client, CONFERENCE, 2026).await?;
+    let state = ConferenceState::from_cfbd(&cfbd_client, CONFERENCE, YEAR).await?;
 
-    let file_path = format!("{}.json", CONFERENCE.cfbd_name());
+    let file_path = format!("{}-{}.json", CONFERENCE.cfbd_name(), YEAR);
     state.to_file(Path::new(&file_path))?;
     Ok(state)
 }
@@ -70,8 +71,27 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             require_round_robin: true,
         })],
     };
-    for (idx, team) in procedure.resolve(&state).iter().enumerate() {
-        println!("{}. {}", idx + 1, state.teams[team].name);
+    let resolution = procedure.resolve(&state);
+
+    for (idx, team) in resolution.order.iter().enumerate() {
+        println!("{}. {}", idx + 1, state.teams[team].abbreviation);
+    }
+
+    let names = |ts: &[TeamId]| {
+        ts.iter()
+            .map(|t| state.teams[t].abbreviation.as_str())
+            .collect::<Vec<_>>()
+            .join(", ")
+    };
+    for step in &resolution.trace {
+        println!(
+            "{}[{}] {:?} on ({}): {}",
+            "  ".repeat(resolution.depth(step)),
+            step.id.0,
+            step.rule,
+            names(&step.tied),
+            if step.separated { "split" } else { "no split" }
+        )
     }
 
     Ok(())

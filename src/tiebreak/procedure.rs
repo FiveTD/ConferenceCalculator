@@ -1,4 +1,8 @@
-use super::{Record, TiebreakRule, record::group_ranked};
+use super::{
+    Record, TiebreakRule,
+    record::group_ranked,
+    trace::{Ctx, Resolution, StepId},
+};
 use crate::{model::TeamId, repository::ConferenceState};
 
 pub struct Procedure {
@@ -7,20 +11,29 @@ pub struct Procedure {
 }
 
 impl Procedure {
-    pub fn resolve(&self, state: &ConferenceState) -> Vec<TeamId> {
+    pub fn resolve(&self, state: &ConferenceState) -> Resolution {
         let standings: Vec<(TeamId, Record)> = state
             .teams
             .keys()
             .map(|&t| (t, state.conference_record(t)))
             .collect();
 
-        group_ranked(standings, Record::cmp_standings)
+        let mut ctx = Ctx::default();
+        let order: Vec<TeamId> = group_ranked(standings, Record::cmp_standings)
             .into_iter()
-            .flat_map(|group| self.resolve_group(group, state))
-            .collect()
+            .flat_map(|group| self.resolve_group(group, None, state, &mut ctx))
+            .collect();
+
+        ctx.finish(order)
     }
 
-    fn resolve_group(&self, tied: Vec<TeamId>, state: &ConferenceState) -> Vec<TeamId> {
+    fn resolve_group(
+        &self,
+        tied: Vec<TeamId>,
+        parent: Option<StepId>,
+        state: &ConferenceState,
+        ctx: &mut Ctx,
+    ) -> Vec<TeamId> {
         if tied.len() < 2 {
             return tied;
         }
@@ -32,14 +45,17 @@ impl Procedure {
         };
 
         for rule in rules {
-            if let Some(groups) = rule.split(&tied, state) {
+            let split = rule.split(&tied, state);
+            let step = ctx.record(parent, &tied, rule.id(), split.is_some());
+
+            if let Some(groups) = split {
                 debug_assert!(
                     is_partition(&groups, &tied),
                     "rule broke the split contract"
                 );
                 return groups
                     .into_iter()
-                    .flat_map(|g| self.resolve_group(g, state))
+                    .flat_map(|g| self.resolve_group(g, Some(step), state, ctx))
                     .collect();
             }
         }

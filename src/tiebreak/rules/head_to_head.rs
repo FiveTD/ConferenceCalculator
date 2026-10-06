@@ -1,4 +1,4 @@
-use crate::tiebreak::{Record, TiebreakRule, record::group_ranked};
+use crate::tiebreak::{Record, TiebreakRule, record::group_ranked, rule::RuleId};
 use crate::{model::TeamId, repository::ConferenceState};
 
 pub struct HeadToHead {
@@ -6,6 +6,10 @@ pub struct HeadToHead {
 }
 
 impl TiebreakRule for HeadToHead {
+    fn id(&self) -> RuleId {
+        RuleId::HeadToHead
+    }
+
     fn split(&self, tied: &[TeamId], state: &ConferenceState) -> Option<Vec<Vec<TeamId>>> {
         if self.require_round_robin && !state.have_all_played(tied) {
             return None;

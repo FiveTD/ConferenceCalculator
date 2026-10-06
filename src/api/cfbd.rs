@@ -123,6 +123,7 @@ impl CfbdClient {
             &[
                 ("year", year.to_string()),
                 ("conference", conference.to_string()),
+                ("seasonType", "regular".to_string()),
             ],
         )
         .await

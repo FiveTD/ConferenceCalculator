@@ -59,8 +59,8 @@ async fn load_from_cfbd() -> Result<ConferenceState, Box<dyn std::error::Error>>
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenvy::dotenv()?;
 
-    let state = load_from_file()?;
-    // let state = load_from_cfbd().await?;
+    // let state = load_from_file()?;
+    let state = load_from_cfbd().await?;
     state.print_games();
 
     let procedure = Procedure {

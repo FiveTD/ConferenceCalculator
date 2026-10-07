@@ -12,22 +12,26 @@ use crate::repository::{ConferenceState, ConferenceStateError};
 use crate::tiebreak::procedures;
 
 const CONFERENCE: Conference = Conference::BigTwelve;
-const SEASON: u16 = 2025;
+const SEASON: u16 = 2024;
 
-#[allow(dead_code)]
-fn load_from_file() -> Result<ConferenceState, ConferenceStateError> {
-    let file_path = format!("{}-{}.json", CONFERENCE.cfbd_name(), SEASON);
-    ConferenceState::from_file(Path::new(&file_path))
+fn file_name(conference: Conference, season: u16) -> String {
+    format!("{}-{}.json", conference.cfbd_name(), season)
 }
 
-#[allow(dead_code)]
-async fn load_from_cfbd() -> Result<ConferenceState, Box<dyn std::error::Error>> {
+fn load_from_file(path: &Path) -> Result<ConferenceState, ConferenceStateError> {
+    ConferenceState::from_file(path)
+}
+
+async fn load_from_cfbd(
+    path: Option<&Path>,
+) -> Result<ConferenceState, Box<dyn std::error::Error>> {
     let cfbd_key = std::env::var("CFBD_KEY")?;
     let cfbd_client = CfbdClient::new(cfbd_key)?;
     let state = ConferenceState::from_cfbd(&cfbd_client, CONFERENCE, SEASON).await?;
 
-    let file_path = format!("{}-{}.json", CONFERENCE.cfbd_name(), SEASON);
-    state.to_file(Path::new(&file_path))?;
+    if let Some(path) = path {
+        state.to_file(path)?;
+    }
     Ok(state)
 }
 
@@ -35,13 +39,23 @@ async fn load_from_cfbd() -> Result<ConferenceState, Box<dyn std::error::Error>>
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenvy::dotenv()?;
 
-    let state = load_from_file()?;
-    // let state = load_from_cfbd().await?;
-    // state.print_games();
+    let file_path = file_name(CONFERENCE, SEASON);
+    let path = Path::new(file_path.as_str());
+    let state = if std::fs::exists(path).is_ok_and(|f| f) {
+        load_from_file(path)?
+    } else {
+        load_from_cfbd(Some(path)).await?
+    };
 
-    let procedure = procedures::procedure_for(CONFERENCE, SEASON)?;
-    let resolution = procedure.resolve(&state);
-    render::print_resolution(&state, &resolution);
+    match procedures::procedure_for(CONFERENCE, SEASON) {
+        Ok(procedure) => {
+            let resolution = procedure.resolve(&state);
+            render::print_resolution(&state, &resolution);
+        }
+        Err(e) => {
+            eprintln!("Error: {}", e);
+        }
+    }
 
     Ok(())
 }

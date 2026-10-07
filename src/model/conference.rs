@@ -9,7 +9,7 @@ pub enum Conference {
 }
 
 impl Conference {
-    pub fn cfbd_name(&self) -> &str {
+    pub const fn cfbd_name(&self) -> &str {
         match self {
             Conference::BigTen => "B1G",
             Conference::BigTwelve => "B12",

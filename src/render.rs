@@ -16,7 +16,7 @@ pub fn print_resolution(state: &ConferenceState, resolution: &Resolution) {
 
     println!("\nTrace:");
     for step in &resolution.trace {
-        let indent = "  ".repeat(resolution.depth(step));
+        let indent = "\t".repeat(resolution.depth(step));
         println!("{indent}{}", step_line(state, step));
         print_step_evidence(state, &indent, step);
     }
